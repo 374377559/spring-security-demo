@@ -1,0 +1,115 @@
+<!DOCTYPE beans PUBLIC "-//SPRING//DTD BEAN 2.0//EN" "http://www.springframework.org/dtd/spring-beans-2.0.dtd">
+<beans>
+
+    <bean id="dataSource" class="com.jolbox.bonecp.BoneCPDataSource" destroy-method="close" dependency-check="none">
+        <property name="driverClass">
+            <value>${datasource.driverClassName}</value>
+        </property>
+        <property name="jdbcUrl">
+            <value>${datasource.url}</value>
+        </property>
+        <property name="username">
+            <value>${datasource.username}</value>
+        </property>
+        <property name="password">
+            <value>${datasource.password}</value>
+        </property>
+        <property name="idleConnectionTestPeriod">
+            <value>${boneCP.idleConnectionTestPeriod}</value>
+        </property>
+        <property name="idleMaxAge">
+            <value>${boneCP.idleMaxAge}</value>
+        </property>
+        <property name="maxConnectionsPerPartition">
+            <value>${boneCP.maxConnectionsPerPartition}</value>
+        </property>
+        <property name="minConnectionsPerPartition">
+            <value>${boneCP.minConnectionsPerPartition}</value>
+        </property>
+        <property name="partitionCount">
+            <value>${boneCP.partitionCount}</value>
+        </property>
+        <property name="acquireIncrement">
+            <value>${boneCP.acquireIncrement}</value>
+        </property>
+        <property name="statementsCacheSize">
+            <value>${boneCP.statementsCacheSize}</value>
+        </property>
+        <property name="statementsCachedPerConnection">
+            <value>${boneCP.statementsCachedPerConnection}</value>
+        </property>
+        <property name="releaseHelperThreads">
+            <value>${boneCP.releaseHelperThreads}</value>
+        </property>
+    </bean>
+
+    <bean id="sessionFactory" class="org.springframework.orm.hibernate3.LocalSessionFactoryBean">
+        <property name="dataSource"><ref local="dataSource" /></property>
+        <property name="mappingResources">
+            <list>
+                <value>com/huaxin/bean/Resources.hbm.xml</value>
+                <value>com/huaxin/bean/Roles.hbm.xml</value>
+                <value>com/huaxin/bean/Users.hbm.xml</value>
+                <value>com/huaxin/bean/Notice.hbm.xml</value>
+            </list>
+        </property>
+        <property name="hibernateProperties">
+            <props>
+                <prop key="hibernate.dialect">${hibernate.dialect}</prop>
+                <prop key="hibernate.show_sql">${hibernate.show_sql}</prop>
+                <prop key="hibernate.jdbc.fetch_size">${hibernate.jdbc.fetch_size}</prop>
+                <prop key="hibernate.jdbc.batch_size">${hibernate.jdbc.batch_size}</prop>
+                <prop key="hibernate.connection.release_mode">after_transaction</prop>
+            </props>
+        </property>
+    </bean>
+
+    <bean abstract="true" lazy-init="true" id="hibernateDao">
+        <property name="sessionFactory"><ref local="sessionFactory" /></property>
+    </bean>
+
+    <bean id="transactionManager" class="org.springframework.orm.hibernate3.HibernateTransactionManager">
+        <property name="sessionFactory"><ref local="sessionFactory" /></property>
+        <property name="dataSource"><ref local="dataSource" /></property>
+    </bean>
+
+    <bean id="txProxyTemplate" abstract="true" class="org.springframework.transaction.interceptor.TransactionProxyFactoryBean">
+        <property name="transactionManager"><ref bean="transactionManager" /></property>
+        <property name="transactionAttributes">
+            <props>
+                <prop key="create*">PROPAGATION_REQUIRED,-com.huaxin.exception.ApplyException</prop>
+                <prop key="save*">PROPAGATION_REQUIRED,-com.huaxin.exception.ApplyException</prop>
+                <prop key="remove*">PROPAGATION_REQUIRED,-com.huaxin.exception.ApplyException</prop>
+                <prop key="update*">PROPAGATION_REQUIRED,-com.huaxin.exception.ApplyException</prop>
+                <prop key="delete*">PROPAGATION_REQUIRED,-com.huaxin.exception.ApplyException</prop>
+                <prop key="batch*">PROPAGATION_REQUIRED,-com.huaxin.exception.ApplyException</prop>
+                <prop key="*">PROPAGATION_REQUIRED,readOnly</prop>
+            </props>
+        </property>
+    </bean>
+
+    <bean id="usersDao" parent="txProxyTemplate">
+        <property name="target">
+            <bean parent="hibernateDao" class="com.huaxin.dao.impl.UsersDaoImpl" />
+        </property>
+    </bean>
+
+    <bean id="rolesDao" parent="txProxyTemplate">
+        <property name="target">
+            <bean parent="hibernateDao" class="com.huaxin.dao.impl.RolesDaoImpl" />
+        </property>
+    </bean>
+
+    <bean id="resourcesDao" parent="txProxyTemplate">
+        <property name="target">
+            <bean parent="hibernateDao" class="com.huaxin.dao.impl.ResourcesDaoImpl" />
+        </property>
+    </bean>
+
+    <bean id="noticeDao" parent="txProxyTemplate">
+        <property name="target">
+            <bean parent="hibernateDao" class="com.huaxin.dao.impl.NoticeDaoImpl" />
+        </property>
+    </bean>
+
+</beans>

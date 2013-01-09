@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans:beans xmlns="http://www.springframework.org/schema/security" xmlns:beans="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd http://www.springframework.org/schema/security http://www.springframework.org/schema/security/spring-security-3.1.xsd">
+
+    <http pattern="/resource/**" security="none" />
+    <http pattern="/login.jsp" security="none" />
+    <http pattern="/access-denied.jsp" security="none" />
+    <http use-expressions='true' entry-point-ref="myAuthenticationEntryPoint" access-denied-page="/access-denied.jsp">
+
+        <!-- 关联代码：com.huaxin.security.MySecurityMetadataSource#loadResourceDefine -->
+        <!-- 关联代码：com.huaxin.security.MyUserDetailServiceImpl#obtionGrantedAuthorities -->
+        <!-- "ROLE_"固定，AAA为权限：注意对于我的例子其实是RESOURCES表的NAME字段的值 -->
+        <!-- ↓↓↓SPRING默认的访问权限控制↓↓↓ -->
+        <intercept-url pattern="/d.jsp" access="ROLE_AAA" />
+        <intercept-url pattern="/e.jsp" access="ROLE_BBB" />
+        <!-- 注意： com.huaxin.security.MyAccessDecisionManager是自已实现的权限控制-->
+        <!-- 注意： 不但要满足自己实现的权限控制还要满足SPRING默认的访问权限控制才可以访问特定资源-->
+
+        <!-- 会话管理 -->
+        <session-management invalid-session-url="/timeout.jsp">
+            <concurrency-control max-sessions="10" error-if-maximum-exceeded="true" />
+        </session-management>
+
+        <!-- 认证和授权 -->
+        <custom-filter ref="myAuthenticationFilter" position="FORM_LOGIN_FILTER"  />
+        <custom-filter ref="myAuthorizationFilter" before="FILTER_SECURITY_INTERCEPTOR"/>
+        
+        <!-- 登出管理 -->
+        <logout invalidate-session="true" logout-url="/j_spring_security_logout" />
+    </http>
+    <!-- 未登录的切入点 -->
+    <beans:bean id="myAuthenticationEntryPoint" class="org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint">
+        <beans:property name="loginFormUrl" value="/login.jsp"></beans:property>
+    </beans:bean>
+
+    <!-- 登录验证器：用户有没有登录的资格 -->
+    <beans:bean id="myAuthenticationFilter" class="com.huaxin.security.MyAuthenticationFilter">
+        <beans:property name="authenticationManager" ref="myAuthenticationManager" />
+        <beans:property name="filterProcessesUrl" value="/j_spring_security_check" />
+        <beans:property name="authenticationSuccessHandler">
+            <beans:bean class="org.springframework.security.web.authentication.SavedRequestAwareAuthenticationSuccessHandler">
+                <beans:property name="defaultTargetUrl" value="/notice.action" />
+            </beans:bean>
+        </beans:property>
+        <beans:property name="authenticationFailureHandler">
+            <beans:bean class="org.springframework.security.web.authentication.SimpleUrlAuthenticationFailureHandler">
+                <beans:property name="defaultFailureUrl" value="/login.jsp" />
+            </beans:bean>
+        </beans:property>
+        <beans:property name="usersDao" ref="usersDao" />
+    </beans:bean>
+
+    <!-- 用户拥有的权限：登录后取得用户所保有的权限信息 -->
+    <authentication-manager alias="myAuthenticationManager">
+        <authentication-provider user-service-ref="myUserDetailService" />
+    </authentication-manager>
+    <beans:bean id="myUserDetailService" class="com.huaxin.security.MyUserDetailServiceImpl">
+        <beans:property name="usersDao" ref="usersDao"></beans:property>
+    </beans:bean>
+
+    <!-- 认证过滤器：判断用户有没有访问特定资源的权限 -->
+    <beans:bean id="myAuthorizationFilter" class="com.huaxin.security.MyAuthorizationFilter">
+        <!-- 用户拥有的权限 -->
+        <beans:property name="authenticationManager" ref="myAuthenticationManager" />
+        <!-- 用户是否拥有所请求资源的权限 -->
+        <beans:property name="accessDecisionManager">
+            <beans:bean class="com.huaxin.security.MyAccessDecisionManager" />
+        </beans:property>
+        <!-- 资源与权限对应关系 -->
+        <beans:property name="securityMetadataSource">
+            <beans:bean class="com.huaxin.security.MySecurityMetadataSource">
+                <beans:constructor-arg name="resourcesDao" ref="resourcesDao" />
+            </beans:bean>
+        </beans:property>
+    </beans:bean>
+
+</beans:beans>

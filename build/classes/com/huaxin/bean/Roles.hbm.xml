@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN" "http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
+<hibernate-mapping>
+    <class name="com.huaxin.bean.Roles" table="roles" catalog="spring_security">
+        <id name="id" type="java.lang.Integer">
+            <column name="id" />
+            <generator class="identity" />
+        </id>
+        <property name="enable" type="java.lang.Integer">
+            <column name="enable" />
+        </property>
+        <property name="name" type="java.lang.String">
+            <column name="name" />
+        </property>
+        <set cascade="all" name="roles" inverse="true" table="users_roles">   
+            <key column="rid" />   
+            <many-to-many class="com.huaxin.bean.Users"  column="uid" />
+        </set>  
+        
+        <set cascade="all" name="resources" inverse="true" table="roles_resources">   
+            <key column="rid" />   
+            <many-to-many class="com.huaxin.bean.Resources"  column="rsid" />
+        </set>  
+    </class>
+</hibernate-mapping>

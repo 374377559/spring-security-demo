@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN" "http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
+<hibernate-mapping>
+    <class name="com.huaxin.bean.Notice" table="notice">
+        <id name="noticeId" type="java.lang.Integer">
+            <column name="NoticeId" />
+            <generator class="identity" />
+        </id>
+        <property name="author" type="java.lang.String">
+            <column name="Author" />
+        </property>
+        <property name="title" type="java.lang.String">
+            <column name="Title" />
+        </property>
+        <property name="addTime" type="java.sql.Timestamp">
+            <column name="AddTime" length="0" />
+        </property>
+        <property name="content" type="java.lang.String">
+            <column name="Content" length="65535" />
+        </property>
+    </class>
+</hibernate-mapping>
